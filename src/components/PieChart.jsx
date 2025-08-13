@@ -16,7 +16,7 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
   const chartSize = 240;
   const radius = 70;
   const center = chartSize / 2;
-  const labelRadius = radius + 50;
+  const labelRadius = radius + 80; // 라벨 거리를 더 멀리
   
   // 총합 계산
   const total = data.reduce((sum, item) => sum + (item.value || 0), 0);
@@ -79,7 +79,7 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
     };
   };
 
-  // 라벨 충돌 방지 로직
+  // 라벨 충돌 방지 로직 (개선된 버전)
   const calculateLabelPositions = () => {
     const positions = segments.map(segment => {
       const midAngle = (segment.startAngle + segment.endAngle) / 2;
@@ -95,8 +95,8 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
     // Y 좌표로 정렬하여 충돌 방지
     positions.sort((a, b) => a.y - b.y);
     
-    // 최소 간격 설정
-    const minSpacing = 25;
+    // 최소 간격 설정 (더 넓게)
+    const minSpacing = 40;
     for (let i = 1; i < positions.length; i++) {
       if (positions[i].y - positions[i-1].y < minSpacing) {
         positions[i].y = positions[i-1].y + minSpacing;
@@ -116,12 +116,12 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
         </h3>
         
         <div className="flex flex-col xl:flex-row items-center justify-center gap-8">
-          {/* 차트 영역 */}
+          {/* 차트 영역 - 크기 확대 */}
           <div className="flex-shrink-0">
             <svg 
-              width={chartSize + 200} 
-              height={chartSize + 120}
-              viewBox={`0 0 ${chartSize + 200} ${chartSize + 120}`}
+              width={chartSize + 300} // 전체 SVG 크기 확대
+              height={chartSize + 200}
+              viewBox={`0 0 ${chartSize + 300} ${chartSize + 200}`}
               className="drop-shadow-lg"
             >
               <defs>
@@ -137,7 +137,7 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
               </defs>
 
               {/* 차트 중심 위치 조정 */}
-              <g transform={`translate(100, 60)`}>
+              <g transform={`translate(150, 100)`}> {/* 중심점을 더 여유있게 조정 */}
                 {/* 차트 세그먼트 */}
                 {segments.map((segment, index) => (
                   segment.angle > 1 && (
@@ -171,9 +171,11 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
                   const edgePoint = polarToCartesian(center, center, radius, label.midAngle);
                   const isRightSide = label.x > center;
                   
-                  // 라벨 박스 위치 계산
-                  const boxX = isRightSide ? label.x + 5 : label.x - 55;
-                  const boxY = label.y - 12;
+                  // 라벨 박스 크기 대폭 확대
+                  const boxWidth = 80; // 50 → 80으로 확대
+                  const boxHeight = 36; // 24 → 36으로 확대
+                  const boxX = isRightSide ? label.x + 10 : label.x - boxWidth - 10;
+                  const boxY = label.y - boxHeight / 2;
                   
                   return (
                     <g key={`label-${index}`}>
@@ -181,37 +183,37 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
                       <polyline
                         points={`${edgePoint.x},${edgePoint.y} ${label.x},${label.y}`}
                         stroke="#9ca3af"
-                        strokeWidth="1.5"
+                        strokeWidth="2"
                         fill="none"
                       />
                       
-                      {/* 라벨 배경 */}
+                      {/* 라벨 배경 - 크기 확대 */}
                       <rect
                         x={boxX}
                         y={boxY}
-                        width="50"
-                        height="24"
+                        width={boxWidth}
+                        height={boxHeight}
                         fill="white"
                         stroke={label.color || '#6b7280'}
-                        strokeWidth="1.5"
-                        rx="4"
+                        strokeWidth="2"
+                        rx="6"
                         filter="url(#chart-shadow)"
                       />
                       
-                      {/* 라벨 텍스트 */}
+                      {/* 라벨 텍스트 - 크기 증가 */}
                       <text
-                        x={boxX + 25}
-                        y={boxY + 8}
+                        x={boxX + boxWidth / 2}
+                        y={boxY + 14}
                         textAnchor="middle"
-                        className="text-xs font-bold fill-gray-700"
+                        className="text-sm font-bold fill-gray-700" // text-xs → text-sm
                       >
                         {label.name}
                       </text>
                       <text
-                        x={boxX + 25}
-                        y={boxY + 18}
+                        x={boxX + boxWidth / 2}
+                        y={boxY + 28}
                         textAnchor="middle"
-                        className="text-xs fill-gray-500"
+                        className="text-sm fill-gray-500" // text-xs → text-sm
                       >
                         {label.percentage}%
                       </text>
@@ -225,31 +227,31 @@ export const PieChart = ({ data, title = "십신 분석" }) => {
           {/* 범례 영역 */}
           <div className="flex-1 min-w-0 max-w-md">
             <h4 className="font-semibold text-gray-700 mb-4 text-center">십신별 상세</h4>
-            <div className="space-y-2">
+            <div className="space-y-3"> {/* space-y-2 → space-y-3 */}
               {segments.map((segment, index) => (
-                <div key={`legend-${index}`} className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div key={`legend-${index}`} className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"> {/* p-3 → p-4 */}
                   <div className="flex items-center min-w-0 flex-1">
                     <div 
-                      className="w-4 h-4 rounded-full mr-3 flex-shrink-0 shadow-sm"
+                      className="w-5 h-5 rounded-full mr-3 flex-shrink-0 shadow-sm" // w-4 h-4 → w-5 h-5
                       style={{ backgroundColor: segment.color || '#6b7280' }}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-gray-700 truncate">{segment.name}</div>
-                      <div className="text-xs text-gray-500">총 {segment.value}개</div>
+                      <div className="text-base font-semibold text-gray-700 truncate">{segment.name}</div> {/* text-sm → text-base */}
+                      <div className="text-sm text-gray-500">총 {segment.value}개</div> {/* text-xs → text-sm */}
                     </div>
                   </div>
                   <div className="text-right ml-2">
-                    <div className="text-sm font-bold text-gray-800">{segment.percentage}%</div>
+                    <div className="text-base font-bold text-gray-800">{segment.percentage}%</div> {/* text-sm → text-base */}
                   </div>
                 </div>
               ))}
             </div>
             
             {/* 총계 */}
-            <div className="mt-4 p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border border-purple-200">
+            <div className="mt-4 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border border-purple-200"> {/* p-3 → p-4 */}
               <div className="text-center">
-                <div className="text-sm text-purple-700">전체 십신</div>
-                <div className="text-lg font-bold text-purple-800">{total}개</div>
+                <div className="text-base text-purple-700">전체 십신</div> {/* text-sm → text-base */}
+                <div className="text-xl font-bold text-purple-800">{total}개</div> {/* text-lg → text-xl */}
               </div>
             </div>
           </div>

@@ -1,0 +1,170 @@
+import React, { useState } from 'react';
+import { InputForm } from './components/InputForm';
+import { ResultDisplay } from './components/ResultDisplay';
+import { LoadingScreen } from './components/LoadingScreen';
+import { calculateSaju } from './utils/sajuCalculator';
+import { getStemCharacter, getBranchCharacter, getPersonality, getLuckyInfo } from './utils/characterAnalysis';
+import { cityLongitudes } from './constants/cityData';
+
+const SajuFortuneTeller = () => {
+  const [birthInfo, setBirthInfo] = useState({
+    year: '',
+    month: '',
+    day: '',
+    hour: '',
+    minute: '0',
+    gender: 'male',
+    city: 'seoul'
+  });
+  
+  const [result, setResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = () => {
+    if (!birthInfo.year || !birthInfo.month || !birthInfo.day || !birthInfo.hour) {
+      alert('모든 정보를 입력해주세요.');
+      return;
+    }
+
+    performSajuCalculation(birthInfo);
+  };
+
+  // 사주 계산 수행 함수 (재사용 가능)
+  const performSajuCalculation = (inputData) => {
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      try {
+        const saju = calculateSaju(
+          inputData.year, 
+          inputData.month, 
+          inputData.day, 
+          inputData.hour, 
+          inputData.minute, 
+          inputData.city,
+          inputData.gender
+        );
+
+        const dayStemData = getStemCharacter(saju.dayStem);
+        const dayBranchData = getBranchCharacter(saju.dayBranch);
+        const yearBranchData = getBranchCharacter(saju.yearBranch);
+        const monthBranchData = getBranchCharacter(saju.monthBranch);
+        const hourBranchData = getBranchCharacter(saju.hourBranch);
+
+        const dayElement = saju.mainElement;
+        const yearElement = saju.yearElement;
+        const monthElement = saju.monthElement;
+        const hourElement = saju.hourElement;
+
+        const branches = [saju.yearBranch, saju.monthBranch, saju.dayBranch, saju.hourBranch];
+        const hasDoHwa = branches.includes('묘') || branches.includes('유') || branches.includes('오') || branches.includes('자');
+        const hasYeokMa = branches.includes('인') || branches.includes('신') || branches.includes('사') || branches.includes('해');
+        
+        const specialStars = [];
+        if (hasDoHwa) specialStars.push('도화(桃花) - 인기운, 예술적 재능');
+        if (hasYeokMa) specialStars.push('역마(驛馬) - 변동, 이동, 활동성');
+
+        const luckyInfo = getLuckyInfo(dayElement);
+        
+        setResult({
+          saju,
+          personality: {
+            dayStem: dayStemData,
+            dayBranch: dayBranchData,
+            yearBranch: yearBranchData,
+            monthBranch: monthBranchData,
+            hourBranch: hourBranchData,
+            mainPersonality: getPersonality(dayElement)
+          },
+          elements: {
+            day: dayElement,
+            year: yearElement,
+            month: monthElement,
+            hour: hourElement
+          },
+          specialStars,
+          luckyInfo
+        });
+        
+        // 야자시 경고가 있는 경우 자동으로 알림 표시
+        if (saju.yajasiWarning && saju.yajasiWarning.hasYajasi) {
+          setTimeout(() => {
+            const userConfirm = window.confirm(
+              `⚠️ 야자시 안내\n\n` +
+              `보정된 시간이 23시${saju.correctionInfo.correctedTime.split(':')[1]}분입니다.\n` +
+              `야자시(23:00~23:59)는 다음날 조자시(00:00~01:00)로 바꾸어서 사주를 보시길 권장합니다.\n\n` +
+              `권장 설정:\n` +
+              `${saju.yajasiWarning.recommendedDate.year}년 ${saju.yajasiWarning.recommendedDate.month}월 ${saju.yajasiWarning.recommendedDate.day}일 ` +
+              `${saju.yajasiWarning.recommendedDate.hour}시${saju.yajasiWarning.recommendedDate.minute.toString().padStart(2, '0')}분\n\n` +
+              `이 설정으로 다시 계산하시겠습니까?`
+            );
+            
+            if (userConfirm) {
+              handleYajasiRecalculate(saju.yajasiWarning.recommendedDate);
+            }
+          }, 1000);
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('사주 계산 오류:', error);
+        alert('사주 계산 중 오류가 발생했습니다.');
+        setIsLoading(false);
+      }
+    }, 2000);
+  };
+
+  // 야자시 재계산 핸들러
+  const handleYajasiRecalculate = (recommendedDate) => {
+    const newBirthInfo = {
+      ...birthInfo,
+      year: recommendedDate.year.toString(),
+      month: recommendedDate.month.toString(),
+      day: recommendedDate.day.toString(),
+      hour: recommendedDate.hour.toString(),
+      minute: recommendedDate.minute.toString()
+    };
+    
+    setBirthInfo(newBirthInfo);
+    performSajuCalculation(newBirthInfo);
+  };
+
+  const resetForm = () => {
+    setResult(null);
+    setBirthInfo({
+      year: '',
+      month: '',
+      day: '',
+      hour: '',
+      minute: '0',
+      gender: 'male',
+      city: 'seoul'
+    });
+  };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!result) {
+    return (
+      <InputForm 
+        birthInfo={birthInfo}
+        setBirthInfo={setBirthInfo}
+        onSubmit={handleSubmit}
+        cityLongitudes={cityLongitudes}
+      />
+    );
+  }
+
+  return (
+    <ResultDisplay 
+      result={result}
+      birthInfo={birthInfo}
+      onReset={resetForm}
+      onRecalculate={handleYajasiRecalculate}
+    />
+  );
+};
+
+export default SajuFortuneTeller;

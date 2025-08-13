@@ -1,0 +1,11 @@
+App.js (메인)
+├── InputForm.jsx (입력)
+│   └── LunarToSolarConverter.jsx (음력변환)
+├── LoadingScreen.jsx (로딩)
+└── ResultDisplay.jsx (결과)
+    ├── BasicSajuTab.jsx
+    ├── PersonalityTab.jsx  
+    ├── ElementsTab.jsx
+    ├── FortuneTab.jsx
+    ├── FortuneGraphTab.jsx
+    └── SewoonTab.jsx
